@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: $NODE_VERSION
+    commands:
+      - node --version
+      - npm ci
+  build:
+    commands:
+      - npm test
+      - npm run build
+
+artifacts:
+  files:
+    - 'dist/**/*'
+    - 'infra/site.yaml'
+
+cache:
+  paths:
+    - 'node_modules/**/*'

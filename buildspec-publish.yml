@@ -1,0 +1,47 @@
+version: 0.2
+
+# Input artifact is the Build stage output: dist/ plus infra/site.yaml.
+# The bucket and distribution are read back from the site stack the
+# Infrastructure stage just deployed. Each phase gets a fresh shell, so the
+# lookup is written to a file and sourced by the phases that follow.
+
+phases:
+  pre_build:
+    commands:
+      - |
+        stack_output() {
+          aws cloudformation describe-stacks \
+            --stack-name "$SITE_STACK_NAME" \
+            --query "Stacks[0].Outputs[?OutputKey=='$1'].OutputValue" \
+            --output text
+        }
+        BUCKET="$(stack_output BucketName)"
+        DISTRIBUTION="$(stack_output DistributionId)"
+        if [ -z "$BUCKET" ] || [ -z "$DISTRIBUTION" ]; then
+          echo "Could not read BucketName/DistributionId from stack $SITE_STACK_NAME" >&2
+          exit 1
+        fi
+        printf 'export BUCKET=%s\nexport DISTRIBUTION=%s\n' "$BUCKET" "$DISTRIBUTION" > target.env
+        echo "Deploying to s3://$BUCKET (distribution $DISTRIBUTION)"
+  build:
+    commands:
+      # Hashed assets are immutable; index.html must never be cached by the edge
+      # or a deploy would not be visible until the TTL expired.
+      - . ./target.env
+      - |
+        aws s3 sync dist/ "s3://$BUCKET/" \
+          --delete \
+          --exclude 'index.html' \
+          --cache-control 'public, max-age=31536000, immutable'
+      - |
+        aws s3 cp dist/index.html "s3://$BUCKET/index.html" \
+          --cache-control 'no-cache, must-revalidate' \
+          --content-type 'text/html; charset=utf-8'
+  post_build:
+    commands:
+      - . ./target.env
+      - |
+        aws cloudfront create-invalidation \
+          --distribution-id "$DISTRIBUTION" \
+          --paths '/*' \
+          --query 'Invalidation.Id' --output text
