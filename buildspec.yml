@@ -14,8 +14,12 @@ phases:
 
 artifacts:
   files:
+    # The Publish stage takes this artifact as its CodeBuild source, so it has to
+    # carry the buildspec that stage runs, alongside the template the
+    # Infrastructure stage deploys.
     - 'dist/**/*'
     - 'infra/site.yaml'
+    - 'buildspec-publish.yml'
 
 cache:
   paths:
