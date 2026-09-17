@@ -25,7 +25,7 @@ Parameters:
       CloudFormation, so create the connection in the console first.
   RepositoryId:
     Type: String
-    Default: claytondavis/hopskipjump
+    Default: davis190/HopSkipJump
     Description: GitHub repository as owner/name.
   BranchName:
     Type: String
