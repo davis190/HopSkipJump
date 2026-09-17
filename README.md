@@ -143,6 +143,6 @@ Both are subdomains, so plain CNAMEs are fine — no ALIAS/ANAME needed.
   stops shipping the pinned Node runtime, bump them rather than editing
   `buildspec.yml`.
 - IAM is scoped by deriving the bucket name from the stack name
-  (`<SiteStackName>-site-<account>`), which lets the build role be written
+  (`<SiteStackName>-<account>`), which lets the build role be written
   against a bucket that doesn't exist yet. CloudFront actions can't be scoped to
   a distribution that CloudFormation hasn't created, so those stay on `*`.

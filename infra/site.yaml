@@ -36,7 +36,7 @@ Resources:
     UpdateReplacePolicy: Retain
     DeletionPolicy: Retain
     Properties:
-      BucketName: !Sub '${SiteStackName}-site-${AWS::AccountId}'
+      BucketName: !Sub '${SiteStackName}-${AWS::AccountId}'
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -115,11 +115,12 @@ Resources:
             Protection: true
             ModeBlock: true
             Override: true
-        CustomHeadersConfig:
-          Items:
-            - Header: Content-Security-Policy
-              Value: "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
-              Override: true
+          # CloudFront rejects Content-Security-Policy as a custom header; it has
+          # a dedicated slot in SecurityHeadersConfig. 'unsafe-inline' for styles
+          # covers the inline style attributes React sets for the flip animation.
+          ContentSecurityPolicy:
+            ContentSecurityPolicy: "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+            Override: true
 
   Distribution:
     Type: AWS::CloudFront::Distribution
