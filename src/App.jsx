@@ -9,9 +9,11 @@ import {
   digitStatuses,
   guessesAllowed,
   isValidSecret,
+  markCounts,
   randomSecret,
   scoreGuess,
 } from './game.js'
+import { track } from './analytics.js'
 
 const LENGTHS = Array.from({ length: MAX_LENGTH - MIN_LENGTH + 1 }, (_, i) => MIN_LENGTH + i)
 
@@ -36,7 +38,8 @@ export default function App() {
   const outOfGuesses = !solved && history.length >= maxGuesses
   const over = solved || outOfGuesses
 
-  function startGame(value) {
+  function startGame(value, source) {
+    track('game_start', { digits: length, max_guesses: maxGuesses, secret_source: source })
     setSecret(value)
     setHistory([])
     setCurrent('')
@@ -53,11 +56,11 @@ export default function App() {
       secretFieldRef.current?.focus()
       return
     }
-    startGame(secretInput)
+    startGame(secretInput, 'custom')
   }
 
   function handleRandom() {
-    startGame(randomSecret(length))
+    startGame(randomSecret(length), 'random')
   }
 
   function newNumber() {
@@ -83,7 +86,17 @@ export default function App() {
     const marks = scoreGuess(current, secret)
     setHistory((prev) => [...prev, { guess: current, marks }])
     setCurrent('')
-  }, [current, length, rejectGuess, secret])
+
+    // Reported from the handler rather than an effect on `history`: StrictMode
+    // runs effects twice in development, which would double every event.
+    const guessNumber = history.length + 1
+    track('guess_submitted', { digits: length, guess_number: guessNumber, ...markCounts(marks) })
+    if (current === secret) {
+      track('game_won', { digits: length, guesses_used: guessNumber, max_guesses: maxGuesses })
+    } else if (guessNumber >= maxGuesses) {
+      track('game_lost', { digits: length, guesses_used: guessNumber, max_guesses: maxGuesses })
+    }
+  }, [current, history.length, length, maxGuesses, rejectGuess, secret])
 
   const pressDigit = useCallback(
     (digit) => {
@@ -167,7 +180,14 @@ export default function App() {
           {over ? (
             <div className="endgame">
               {!solved && !revealed ? (
-                <button type="button" className="ghost" onClick={() => setRevealed(true)}>
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={() => {
+                    setRevealed(true)
+                    track('number_revealed', { digits: length, guesses_used: history.length })
+                  }}
+                >
                   Reveal the number
                 </button>
               ) : null}
@@ -180,7 +200,18 @@ export default function App() {
                 <button type="button" className="primary" onClick={newNumber}>
                   New number
                 </button>
-                <button type="button" className="ghost" onClick={() => setPhase('quit')}>
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={() => {
+                    track('game_quit', {
+                      digits: length,
+                      guesses_used: history.length,
+                      result: solved ? 'won' : 'lost',
+                    })
+                    setPhase('quit')
+                  }}
+                >
                   Quit game
                 </button>
               </div>

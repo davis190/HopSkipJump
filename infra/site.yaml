@@ -118,8 +118,13 @@ Resources:
           # CloudFront rejects Content-Security-Policy as a custom header; it has
           # a dedicated slot in SecurityHeadersConfig. 'unsafe-inline' for styles
           # covers the inline style attributes React sets for the flip animation.
+          # Scripts stay free of 'unsafe-inline': src/analytics.js injects gtag.js
+          # as an external script rather than using Google's inline snippet, so
+          # naming the googletagmanager.com host is enough. GA4 reports over
+          # fetch/beacon to regional *.google-analytics.com endpoints and falls
+          # back to an image beacon, hence both connect-src and img-src.
           ContentSecurityPolicy:
-            ContentSecurityPolicy: "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+            ContentSecurityPolicy: "default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.googletagmanager.com https://*.google-analytics.com; connect-src 'self' https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
             Override: true
 
   Distribution:

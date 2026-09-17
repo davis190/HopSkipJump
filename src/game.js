@@ -85,3 +85,16 @@ export function digitStatuses(history) {
   }
   return status
 }
+
+/** How many of each mark a guess earned. Reported per guess to analytics. */
+export function markCounts(marks) {
+  let jumps = 0
+  let skips = 0
+  let hops = 0
+  for (const mark of marks) {
+    if (mark === JUMP) jumps++
+    else if (mark === SKIP) skips++
+    else hops++
+  }
+  return { jumps, skips, hops }
+}

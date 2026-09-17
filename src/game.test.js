@@ -1,6 +1,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { scoreGuess, digitStatuses, guessesAllowed, isValidSecret } from './game.js'
+import {
+  scoreGuess,
+  digitStatuses,
+  guessesAllowed,
+  isValidSecret,
+  markCounts,
+} from './game.js'
 
 test('all correct', () => {
   assert.deepEqual(scoreGuess('417', '417'), ['J', 'J', 'J'])
@@ -55,4 +61,10 @@ test('secret validation', () => {
   assert.equal(isValidSecret('00', 3), false)
   assert.equal(isValidSecret('1a3', 3), false)
   assert.equal(isValidSecret('1 3', 3), false)
+})
+
+test('mark counts tally a guess', () => {
+  assert.deepEqual(markCounts(scoreGuess('4444', '4417')), { jumps: 2, skips: 0, hops: 2 })
+  assert.deepEqual(markCounts(scoreGuess('741', '417')), { jumps: 0, skips: 3, hops: 0 })
+  assert.deepEqual(markCounts([]), { jumps: 0, skips: 0, hops: 0 })
 })
