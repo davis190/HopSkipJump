@@ -129,11 +129,11 @@ export default function App() {
   }, [over, phase, pressBackspace, pressDigit, submitGuess])
 
   return (
-    <div className="app">
+    <div className={`app phase-${phase}`}>
       <header className="masthead">
         <h1>
-          <span className="jump">Hop</span> <span className="skip">Skip</span>{' '}
-          <span className="hop">Jump</span>
+          <span className="hop">Hop</span> <span className="skip">Skip</span>{' '}
+          <span className="jump">Jump</span>
         </h1>
         <p className="tagline">Wordle, but for numbers</p>
       </header>
@@ -157,7 +157,7 @@ export default function App() {
           fieldRef={secretFieldRef}
         />
       ) : (
-        <main className="board-area">
+        <main className={over ? 'board-area over' : 'board-area'}>
           <Status
             solved={solved}
             outOfGuesses={outOfGuesses}
@@ -349,7 +349,11 @@ function Board({ length, maxGuesses, history, current, over, shake }) {
       />
     )
   }
-  return <div className="board">{rows}</div>
+  return (
+    <div className="board" style={{ '--rows': maxGuesses, '--cols': length }}>
+      {rows}
+    </div>
+  )
 }
 
 function Row({ length, guess, marks, active, shake }) {
@@ -439,19 +443,22 @@ function Legend() {
       <div className="legend-item">
         <span className="swatch jump">J</span>
         <span>
-          <strong>Jump</strong> — right digit, right spot
+          <strong>Jump</strong>
+          <span className="legend-desc"> — right digit, right spot</span>
         </span>
       </div>
       <div className="legend-item">
         <span className="swatch skip">S</span>
         <span>
-          <strong>Skip</strong> — right digit, wrong spot
+          <strong>Skip</strong>
+          <span className="legend-desc"> — right digit, wrong spot</span>
         </span>
       </div>
       <div className="legend-item">
         <span className="swatch hop">H</span>
         <span>
-          <strong>Hop</strong> — digit isn't in the number
+          <strong>Hop</strong>
+          <span className="legend-desc"> — digit isn't in the number</span>
         </span>
       </div>
     </section>

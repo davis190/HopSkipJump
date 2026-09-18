@@ -23,17 +23,25 @@ body {
   color: var(--text);
   font-family: 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif;
   -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: none;
 }
 
 button {
   font-family: inherit;
   cursor: pointer;
+  /* No 300ms double-tap-to-zoom delay, no grey flash, no text selection when
+     a finger drags slightly across a key. */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .app {
   max-width: 520px;
   margin: 0 auto;
-  padding: 20px 16px 48px;
+  padding: 20px max(16px, env(safe-area-inset-right)) calc(48px + env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -115,8 +123,10 @@ button {
   transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.length:hover {
-  border-color: var(--text);
+@media (hover: hover) {
+  .length:hover {
+    border-color: var(--text);
+  }
 }
 
 .length.on {
@@ -190,13 +200,13 @@ button {
 
 .primary,
 .ghost {
-  height: 50px;
+  min-height: 50px;
   border-radius: 10px;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.04em;
   border: 1px solid transparent;
-  padding: 0 18px;
+  padding: 8px 18px;
 }
 
 .primary {
@@ -216,8 +226,10 @@ button {
   border-color: var(--line-soft);
 }
 
-.ghost:hover {
-  border-color: var(--text);
+@media (hover: hover) {
+  .ghost:hover {
+    border-color: var(--text);
+  }
 }
 
 .wide {
@@ -473,11 +485,15 @@ button {
 
 .key:active {
   transform: translateY(1px);
+  filter: brightness(1.35);
 }
 
 .key.hop {
   background: var(--hop);
   color: var(--muted);
+  /* Dimmed rather than struck through: a line through "0" just reads as a
+     slashed zero. The bank keeps the strike-through, where there is room. */
+  opacity: 0.5;
 }
 .key.skip {
   background: var(--skip);
@@ -582,11 +598,231 @@ button {
   background: var(--jump);
 }
 
-@media (max-width: 380px) {
+/* ---- phones ---- */
+
+@media (max-width: 560px) {
   .app {
-    padding: 14px 10px 32px;
+    gap: 14px;
+  }
+
+  /* Six length buttons in one row rather than a wrap that strands one on its
+     own line at 320px. */
+  .length-row {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .length {
+    min-width: 0;
+    height: 48px;
+  }
+
+  /* Ten keys across a 375px screen is a 31px target. Two rows of five is 64px. */
+  .keypad {
+    gap: 8px;
+  }
+
+  .keypad-row {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .key {
+    height: 48px;
+    border-radius: 8px;
+    font-size: 20px;
+  }
+
+  .wide-key {
+    font-size: 14px;
+  }
+
+  .endgame-actions {
+    gap: 8px;
+  }
+
+  /* Playing: trim the chrome so the board keeps the space. */
+  .app.phase-playing .masthead {
+    padding-bottom: 8px;
+  }
+
+  .app.phase-playing .masthead h1 {
+    font-size: 22px;
+  }
+
+  .app.phase-playing .tagline {
+    display: none;
+  }
+
+  .app.phase-playing .legend {
+    flex-direction: row;
+    justify-content: space-around;
+    gap: 8px;
+    padding-top: 10px;
+    font-size: 12px;
+  }
+
+  .app.phase-playing .legend-item {
+    gap: 6px;
+  }
+
+  .app.phase-playing .legend-desc {
+    display: none;
+  }
+
+  .app.phase-playing .swatch {
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 360px) {
+  .app {
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
   }
   .key {
-    height: 46px;
+    height: 44px;
+  }
+}
+
+/* The keypad already colours every digit and it is the thing under the thumb,
+   so the bank is redundant while a guess is in progress. It comes back for the
+   endgame, when the keypad is gone. */
+@media (max-width: 560px), (max-height: 560px) and (orientation: landscape) {
+  .board-area:not(.over) .bank {
+    display: none;
+  }
+}
+
+/* The play screen becomes one fixed-height panel instead of a long scroll: the
+   chrome takes what it needs, the board absorbs the rest, and the cells size
+   themselves to whatever the board ended up with. That needs container query
+   units to measure the leftover height, so browsers without them keep the
+   scrolling layout rather than a broken one. */
+@media (max-width: 560px), (max-height: 560px) and (orientation: landscape) {
+  @supports (height: 1cqh) {
+    .app.phase-playing {
+      min-height: 100dvh;
+      gap: 12px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .app.phase-playing .board-area {
+      flex: 1 1 0;
+      min-height: 0;
+      gap: 12px;
+    }
+
+    .app.phase-playing .legend {
+      flex: 0 0 auto;
+    }
+
+    .app.phase-playing .board {
+      flex: 1 1 0;
+      min-height: 120px;
+      justify-content: center;
+      container-type: size;
+    }
+
+    .app.phase-playing .row {
+      --gap: 6px;
+      /* Square, bounded by whichever runs out first: the board's width across
+         --cols, or its height down --rows. */
+      --cell: max(
+        22px,
+        min(
+          (100cqw - (var(--cols) - 1) * var(--gap)) / var(--cols),
+          (100cqh - (var(--rows) - 1) * var(--gap)) / var(--rows)
+        )
+      );
+      display: flex;
+      justify-content: center;
+      gap: var(--gap);
+      width: auto;
+      max-width: 100%;
+    }
+
+    .app.phase-playing .cell {
+      flex: 0 0 auto;
+      width: var(--cell);
+      height: var(--cell);
+      aspect-ratio: auto;
+      font-size: calc(var(--cell) * 0.52);
+    }
+
+    .app.phase-playing .cell .mark {
+      font-size: clamp(7px, calc(var(--cell) * 0.2), 11px);
+    }
+  }
+}
+
+/* ---- phones held sideways ---- */
+
+/* Stacking board over keypad leaves no room either way in landscape, so the
+   two sit side by side and the board gets the full height of the screen. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .keypad-row {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .key {
+    height: 42px;
+    border-radius: 8px;
+    font-size: 18px;
+  }
+
+  .wide-key {
+    font-size: 13px;
+  }
+
+  .app.phase-playing {
+    max-width: 780px;
+    gap: 8px;
+  }
+
+  .app.phase-playing .masthead,
+  .app.phase-playing .legend {
+    display: none;
+  }
+
+  @supports (height: 1cqh) {
+    .app.phase-playing .board-area {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      /* The spacer rows centre status + bank + keypad against the board
+         instead of stranding the status line at the top. */
+      grid-template-rows: minmax(0, 1fr) auto auto auto minmax(0, 1fr);
+      grid-template-areas:
+        'board .'
+        'board status'
+        'board bank'
+        'board keypad'
+        'board .';
+      gap: 8px 18px;
+    }
+
+    .app.phase-playing .status {
+      grid-area: status;
+    }
+
+    .app.phase-playing .board {
+      grid-area: board;
+      align-self: stretch;
+      height: 100%;
+    }
+
+    .app.phase-playing .bank {
+      grid-area: bank;
+    }
+
+    .app.phase-playing .keypad,
+    .app.phase-playing .endgame {
+      grid-area: keypad;
+    }
   }
 }
