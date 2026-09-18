@@ -17,6 +17,14 @@ import { track } from './analytics.js'
 
 const LENGTHS = Array.from({ length: MAX_LENGTH - MIN_LENGTH + 1 }, (_, i) => MIN_LENGTH + i)
 
+// -webkit-text-security masks a plain text field. Where it is missing, fall back
+// to type="password" so the number is never shown in the clear.
+const canMaskWithCss =
+  typeof CSS === 'undefined' ||
+  typeof CSS.supports !== 'function' ||
+  CSS.supports('-webkit-text-security', 'disc') ||
+  CSS.supports('text-security', 'disc')
+
 const MARK_CLASS = { [HOP]: 'hop', [SKIP]: 'skip', [JUMP]: 'jump' }
 const MARK_WORD = { [HOP]: 'Hop', [SKIP]: 'Skip', [JUMP]: 'Jump' }
 
@@ -254,6 +262,9 @@ function Setup({
   onRandom,
   fieldRef,
 }) {
+  const [reveal, setReveal] = useState(false)
+  const masked = !reveal
+
   return (
     <main className="setup">
       <fieldset className="lengths">
@@ -274,19 +285,44 @@ function Setup({
       </fieldset>
 
       <form onSubmit={onSubmit} className="secret-form">
-        <label htmlFor="secret">
-          Set the number <span className="muted">({length} digits, hidden as you type)</span>
-        </label>
+        <div className="secret-label-row">
+          <label htmlFor="secret-number">
+            Set the number{' '}
+            <span className="muted">({length} digits{reveal ? '' : ', hidden as you type'})</span>
+          </label>
+          <button
+            type="button"
+            className="reveal"
+            aria-pressed={reveal}
+            onClick={() => setReveal((on) => !on)}
+          >
+            {reveal ? 'Hide it' : 'Show me'}
+          </button>
+        </div>
+        {/* A text field, not a password one: password managers offer to fill and save
+            anything typed into a password field, which mangles the entry. Masking is
+            CSS instead, so the number still stays off screen. */}
         <input
-          id="secret"
+          id="secret-number"
           ref={fieldRef}
-          type="password"
+          type={masked && !canMaskWithCss ? 'password' : 'text'}
           inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={length}
           autoComplete="off"
-          className="secret-input"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          data-1p-ignore=""
+          data-lpignore="true"
+          data-bwignore="true"
+          data-form-type="other"
+          className={masked && canMaskWithCss ? 'secret-input masked' : 'secret-input'}
           placeholder={'•'.repeat(length)}
           value={secretInput}
-          onChange={(event) => setSecretInput(event.target.value)}
+          onChange={(event) =>
+            setSecretInput(event.target.value.replace(/\D/g, '').slice(0, length))
+          }
         />
         <p className="dots" aria-hidden="true">
           {Array.from({ length }, (_, i) => (

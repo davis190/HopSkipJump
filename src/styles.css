@@ -156,6 +156,31 @@ button {
   margin: 0;
 }
 
+.secret-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reveal {
+  flex: none;
+  background: transparent;
+  border: 0;
+  padding: 2px 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .reveal:hover {
+    color: var(--text);
+  }
+}
+
 .secret-input {
   height: 54px;
   border-radius: 10px;
@@ -166,6 +191,13 @@ button {
   letter-spacing: 0.5em;
   text-align: center;
   padding: 0 0 0 0.5em;
+}
+
+/* Masks the digits without the password-manager circus a type="password" field
+   invites. Paired with a type="password" fallback in App.jsx where unsupported. */
+.secret-input.masked {
+  -webkit-text-security: disc;
+  text-security: disc;
 }
 
 .secret-input:focus {

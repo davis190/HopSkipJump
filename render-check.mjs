@@ -13,7 +13,8 @@ await server.close()
 const checks = {
   'title renders': /Hop<\/span>/.test(html),
   'length buttons 3..8': [3,4,5,6,7,8].every(n => html.includes(`>${n}</button>`)),
-  'secret input is masked': html.includes('type="password"'),
+  'secret input is masked, not a password field': html.includes('secret-input masked') && !html.includes('type="password"'),
+  'reveal toggle present': html.includes('>Show me</button>'),
   'random option present': html.includes('Generate a random 4-digit number'),
   'legend explains H/S/J': ['Jump','Skip','Hop'].every(w => html.includes(`<strong>${w}</strong>`)),
   'submit disabled until full': html.includes('disabled'),
